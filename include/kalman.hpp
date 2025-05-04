@@ -5,7 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include "Eigen/Dense.cpp"
-using namespace std;
+
 
 class kalman {
     private:
@@ -16,10 +16,10 @@ class kalman {
         kalman(int state_dim,int mea_dim):state_dim(state_dim),mea_dim(mea_dim)
         {
             x_hat = Eigen::MatrixXd::Zero(state_dim,1);
-            cout << "x_hat:" << x_hat << endl;
+            std::cout << "x_hat:" << x_hat << std::endl;
             P = Eigen::MatrixXd::Identity(state_dim,state_dim);
-            cout << "P:" << P << endl;
-            cout<<"kalman construct"<<std::endl;
+            std::cout << "P:" << P << std::endl;
+            std::cout<<"kalman construct"<<std::endl;
         }
 
         Eigen::MatrixXd get_p() const
@@ -29,49 +29,49 @@ class kalman {
 
         void predict(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B, const Eigen::MatrixXd& u, const Eigen::MatrixXd& Q,bool B_in = true)
         {
-            cout << "predict" << endl;
-            cout << "A:" << A << endl;
-            cout << "B:" << B << endl;
-            cout << "u:" << u << endl;
+            std::cout << "predict" << std::endl;
+            std::cout << "A:" << A << std::endl;
+            std::cout << "B:" << B << std::endl;
+            std::cout << "u:" << u << std::endl;
             if(B_in)
             {
-                cout << "B_in" << endl;
+                std::cout << "B_in" << std::endl;
                 x_hat = A * x_hat + B * u;
-                cout << x_hat << endl;
+                std::cout << x_hat << std::endl;
                 P = A * P * A.transpose() + Q;
-                cout << P << endl;
+                std::cout << P << std::endl;
             }
             else
             {
-                cout << "B_out" << endl;
+                std::cout << "B_out" << std::endl;
                 x_hat = A * x_hat;
-                cout << x_hat << endl;
+                std::cout << x_hat << std::endl;
                 P = A * P * A.transpose() + Q;
-                cout << P << endl;
+                std::cout << P << std::endl;
             }
         }
 
         void update(const Eigen::MatrixXd& H, const Eigen::MatrixXd& z, const Eigen::MatrixXd& R)
         {
-            cout << "update" << endl;
-            cout << "H:" <<H << endl;
-            cout << "z:" << z << endl;
-            cout << "R:" << R << endl;
-            cout << "P:" << P << endl;
+            std::cout << "update" << std::endl;
+            std::cout << "H:" <<H << std::endl;
+            std::cout << "z:" << z << std::endl;
+            std::cout << "R:" << R << std::endl;
+            std::cout << "P:" << P << std::endl;
             Eigen::MatrixXd S = (H * P * H.transpose() + R);
-            cout << "S:" << S << endl;
+            std::cout << "S:" << S << std::endl;
             Eigen::MatrixXd K = P * H.transpose() * S.inverse();
-            cout << "K:" << K << endl;
+            std::cout << "K:" << K << std::endl;
             x_hat = x_hat + K * (z - H * x_hat);
-            cout << "x_hat:" << x_hat << endl;
+            std::cout << "x_hat:" << x_hat << std::endl;
             P= (Eigen::MatrixXd::Identity(state_dim, state_dim) - K * H) * P;
-            cout << "P:" << P << endl;
+            std::cout << "P:" << P << std::endl;
         }
 
         void elementChange_P(int n)
         {
             P *= std::pow(10,n);
-            cout << P << std::endl;
+            std::cout << P << std::endl;
         }
 
         void elementChange_X(Eigen::MatrixXd X_new)

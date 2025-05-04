@@ -17,7 +17,6 @@ std::vector<cv::Point3f> object_points = {
 };
 
 int brightness_threshold = 190;
-std::string dataname = "magic";
 
 
 class Light
@@ -449,7 +448,14 @@ cv::Mat adjustExposure(cv::Mat& input, double gamma) {
     return output;
 }
 
-std::vector<armorPose> armor_pose_calculator(cv::Mat input)
+
+double darken_gamma = 2;
+std::vector<armorPose> armor_pose_calculator(cv::Mat input,
+    bool new_camera = false,
+    cv::Mat new_camera_matrix = camera_matrix, 
+    cv::Mat new_distortion_coefficients = distortion_coefficients,
+    bool gamma_adjust = false,
+    double new_gamma = darken_gamma)
 {
     std::vector<armorPose> armor_poses;
     std::vector<Light> lights;
@@ -460,7 +466,15 @@ std::vector<armorPose> armor_pose_calculator(cv::Mat input)
         std::cerr << "Error: Could not load image!" << std::endl;
         throw std::runtime_error("Image loading failed");
     }
-    double darken_gamma = 2;
+    if(new_camera)
+    {
+        camera_matrix = new_camera_matrix;
+        distortion_coefficients = new_distortion_coefficients;
+    }
+    if(gamma_adjust)
+    {
+        darken_gamma = new_gamma;
+    }
     cv::Mat dark_image = adjustExposure(src, darken_gamma);
     src = dark_image;
     cv::Mat binary = binarization(src);
