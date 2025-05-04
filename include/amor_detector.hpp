@@ -453,38 +453,23 @@ cv::Mat adjustExposure(cv::Mat& input, double gamma) {
     return output;
 }
 
-/* std::vector<Light> find_lights_HSV(cv::Mat input)
+std::vector<armorPose> armor_pose_calculator(cv::Mat input)
 {
-
-} */
-
-int main()
-{
-    cv::namedWindow("Darkened Image", cv::WINDOW_NORMAL); cv::resizeWindow("Darkened Image", 64, 48);
-    cv::namedWindow("binary", cv::WINDOW_NORMAL); cv::resizeWindow("binary", 64, 48);
-    cv::namedWindow("Detected Lights", cv::WINDOW_NORMAL); cv::resizeWindow("Detected Lights", 128, 72);
-    cv::namedWindow("Detected Armor", cv::WINDOW_NORMAL); cv::resizeWindow("Detected Armor", 128, 72);
-    cv::namedWindow("test", cv::WINDOW_NORMAL); cv::resizeWindow("test", 640, 480);
+    std::vector<armorPose> armor_poses;
     std::vector<Light> lights;
     std::vector<Armor> armors;
-    cv::Mat src = cv::imread("../data_armor/armors/"+dataname+".jpg");
+    cv::Mat src = input.clone();
     if (src.empty())
     {
         std::cerr << "Error: Could not load image!" << std::endl;
-        return -1;
+        throw std::runtime_error("Image loading failed");
     }
     double darken_gamma = 2;
     cv::Mat dark_image = adjustExposure(src, darken_gamma);
-    cv::imshow("Darkened Image", dark_image);
-    cv::waitKey(0);
     src = dark_image;
     cv::Mat binary = binarization(src);
-    cv::imshow("binary",binary);
-    cv::waitKey(0);
     lights = find_lights(src,binary);
     armors = Armor_Establish(lights);
-    cv::Mat visualization = src.clone();
-
     for(auto& armor:armors)
     {
         cv::Mat rvec;
@@ -493,31 +478,6 @@ int main()
         std::cout << "R_Light_center" << armor.R_Light.center << std::endl;
         std::vector<cv::Point2f> image_points = armor.points;
         
-        // 绘制装甲板轮廓
-        for(int i=0; i<4; i++) {
-            cv::line(visualization, 
-                    armor.points[i], 
-                    armor.points[(i+1)%4], 
-                    cv::Scalar(0, 255, 0),  // 绿色线条
-                    2);                     // 线宽
-            cv::circle(visualization,
-                    armor.points[i],
-                    3,
-                    cv::Scalar(0, 0, 255),  // 红色圆点
-                    3);                     // 圆点半径
-            cv::putText(visualization,
-                        std::to_string(i),
-                        armor.points[i] + cv::Point2f(5,5),
-                        cv::FONT_HERSHEY_SIMPLEX,
-                        0.5,
-                        cv::Scalar(255,255,255),
-                        2);
-                }
-        
-        // 绘制中心点
-        cv::circle(visualization, armor.center, 5, cv::Scalar(0, 0, 255), -1);  // 红色实心圆
-        cv::putText(visualization, "Armor", armor.center + cv::Point2f(10, -10),
-                   cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 200, 255), 2);
         cv::solvePnP(
             object_points,
             image_points,    
@@ -530,9 +490,9 @@ int main()
 
         std::cout << "Armor position: " << armor.pose.position << std::endl;
         std::cout << "Armor rotation: " << armor.pose.rotation << std::endl;
+        armor_poses.push_back(armor.pose);
+
+        std::cout << "############################################################" << std::endl;
     }
-    cv::imshow("Detected Armor", visualization);
-    cv::waitKey(0);
-    cv::destroyAllWindows();
-    return 0;
+    return armor_poses;
 }
