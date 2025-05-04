@@ -381,8 +381,6 @@ std::vector<Armor> Armor_Establish(std::vector<Light> lights_in)
     
     // 与预处理图像取交集，获取又亮又符合颜色的区域
     cv::bitwise_and(preprocessed_image, light_contour_binary_image, light_contour_binary_image);
-    cv::imshow("test",light_contour_binary_image);
-    cv::waitKey(0);
     // 寻找轮廓
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(light_contour_binary_image, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
@@ -434,8 +432,6 @@ std::vector<Armor> Armor_Establish(std::vector<Light> lights_in)
     if(!tmp_lights.empty())
     {
         std::cout << "Lights found" << std::endl;
-        cv::imshow("Detected Lights", visualization);
-        cv::waitKey(0);
     }
     else
         std::cout << "Light_Not_Found" << std::endl;
