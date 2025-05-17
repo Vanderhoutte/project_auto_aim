@@ -16,7 +16,7 @@ std::vector<cv::Point3f> object_points = {
     {0.135, 0.0, 0.0}
 };
 
-int brightness_threshold = 190;
+int brightness_threshold = 10;
 
 
 class Light
@@ -332,11 +332,10 @@ std::vector<Armor> Armor_Establish(std::vector<Light> lights_in)
 
             Armor Armor_temp = Armor(left_light,right_light);
             bool light_height_ratio_valid = Armor_temp.light_height_ratio < 1.2 && Armor_temp.light_height_ratio > 0.8;
-            bool light_angle_diff_valid = Armor_temp.light_angle_diff < 10;
+            bool light_angle_diff_valid = Armor_temp.light_angle_diff < 20;
             bool angle_valid = Armor_temp.angle < 30;
-            bool light_center_distance_valid = (Armor_temp.light_center_dis > 0.8 && Armor_temp.light_center_dis < 3.2)
-                                                || (Armor_temp.light_center_dis > 3.2 && Armor_temp.light_center_dis < 5.5);
-            if(light_height_ratio_valid && light_angle_diff_valid  && light_center_distance_valid)
+            bool light_center_distance_valid = (Armor_temp.light_center_dis > 0.8 && Armor_temp.light_center_dis < 3.2);
+            if(light_height_ratio_valid && light_angle_diff_valid  && light_center_distance_valid &&angle_valid)
             {
                 new_Armors.push_back(Armor_temp);
                 std::cout << "position in camera:" << Armor_temp.points << std::endl;
@@ -392,7 +391,7 @@ std::vector<Armor> Armor_Establish(std::vector<Light> lights_in)
         armor_num++;
         Light light_tmp = Light(cv::minAreaRect(contour));
         light_tmp.valid = (light_tmp.length > light_tmp.width * 2) && (std::abs(light_tmp.angle) < 25);
-        bool light_ratio_valid = light_tmp.length > light_tmp.width * 3;
+        bool light_ratio_valid = light_tmp.length > light_tmp.width * 1.5;
         bool light_angle_valid = std::abs(light_tmp.angle) < 25;
         if (!light_ratio_valid)
         {
@@ -454,8 +453,10 @@ std::vector<armorPose> armor_pose_calculator(cv::Mat input,
     bool new_camera = false,
     cv::Mat new_camera_matrix = camera_matrix, 
     cv::Mat new_distortion_coefficients = distortion_coefficients,
+    bool using_gamma = true,
     bool gamma_adjust = false,
-    double new_gamma = darken_gamma)
+    double new_gamma = darken_gamma
+    )
 {
     std::vector<armorPose> armor_poses;
     std::vector<Light> lights;
@@ -476,7 +477,9 @@ std::vector<armorPose> armor_pose_calculator(cv::Mat input,
         darken_gamma = new_gamma;
     }
     cv::Mat dark_image = adjustExposure(src, darken_gamma);
-    src = dark_image;
+    if(using_gamma){
+        src = dark_image;
+    }
     cv::Mat binary = binarization(src);
     lights = find_lights(src,binary);
     armors = Armor_Establish(lights);
@@ -484,8 +487,6 @@ std::vector<armorPose> armor_pose_calculator(cv::Mat input,
     {
         cv::Mat rvec;
         std::cout << "Armor found" << std::endl;
-        std::cout << "L_Light_center" << armor.L_Light.center << std::endl;
-        std::cout << "R_Light_center" << armor.R_Light.center << std::endl;
         std::vector<cv::Point2f> image_points = armor.points;
         
         cv::solvePnP(
@@ -498,11 +499,7 @@ std::vector<armorPose> armor_pose_calculator(cv::Mat input,
         );
         cv::Rodrigues(rvec, armor.pose.rotation);
 
-        std::cout << "Armor position: " << armor.pose.position << std::endl;
-        std::cout << "Armor rotation: " << armor.pose.rotation << std::endl;
         armor_poses.push_back(armor.pose);
-
-        std::cout << "############################################################" << std::endl;
     }
     return armor_poses;
 }
